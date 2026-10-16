@@ -1,0 +1,3 @@
+# Westwing product URLs to watch, one per line. Re-read before every check:
+# edit this file on the Pi, no restart needed.
+https://www.westwing.de/holz-highboard-libby-159713.html

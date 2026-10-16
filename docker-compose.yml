@@ -1,0 +1,37 @@
+# Westwing price monitor on the Raspberry Pi.
+# Lives in ~/westwing-notif/, put there by deploy.sh.
+# No ports, no Traefik: it only talks outbound to westwing.de and ntfy.sh.
+
+services:
+  westwing-notif:
+    container_name: westwing-notif
+    build: .
+    image: westwing-notif:local
+    restart: unless-stopped
+    user: "1000:1000"                 # host user, so ./data stays editable on the host
+    read_only: true
+    env_file: .env                    # NTFY_URL=https://ntfy.sh/<topic>
+    environment:
+      TZ: Europe/Berlin
+      CHECK_INTERVAL: 2h              # ±15 % jitter per sleep
+      SUMMARY_SCHEDULE: "Sun 10:00"   # weekly status push, "off" disables
+    volumes:
+      - ./config:/config:ro           # items.txt, re-read every check
+      - ./data:/data                  # state.json, history.csv
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "/westwing-notif", "healthcheck"]
+      interval: 10m
+      timeout: 10s
+      retries: 1
+      start_period: 2m
+      start_interval: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: "2"
