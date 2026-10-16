@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -90,7 +91,7 @@ func productFrom(obj map[string]any) (Product, error) {
 		if !ok {
 			price, ok = number(offer["lowPrice"])
 		}
-		if !ok {
+		if !ok || price <= 0 || math.IsNaN(price) || math.IsInf(price, 0) {
 			continue
 		}
 		if p.Price < 0 || price < p.Price {
@@ -98,9 +99,9 @@ func productFrom(obj map[string]any) (Product, error) {
 			if c, _ := offer["priceCurrency"].(string); c != "" {
 				p.Currency = c
 			}
-		}
-		if a, _ := offer["availability"].(string); strings.HasSuffix(a, "InStock") {
-			p.InStock = true
+			// Stock belongs to the offer whose price is reported.
+			a, _ := offer["availability"].(string)
+			p.InStock = strings.HasSuffix(a, "InStock")
 		}
 	}
 	if p.Price <= 0 {

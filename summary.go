@@ -54,6 +54,9 @@ func (s Schedule) Next(after time.Time) time.Time {
 // BuildSummary lists every watched item's price, lowest price and stock.
 func BuildSummary(items []string, st *State) Notification {
 	var lines []string
+	if len(items) == 0 {
+		lines = append(lines, "Keine Artikel in items.txt, es wird nichts beobachtet.")
+	}
 	for _, url := range items {
 		it := st.Items[url]
 		if it == nil || it.LastSuccess.IsZero() {

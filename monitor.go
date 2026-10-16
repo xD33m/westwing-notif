@@ -53,8 +53,8 @@ func OnSuccess(prev *ItemState, url string, p Product, now time.Time) (ItemState
 		})
 	}
 	if p.Price < prev.Price {
-		pct := (p.Price - prev.Price) / prev.Price * 100
-		msg := fmt.Sprintf("%s → %s (%.0f %%)", FormatEUR(prev.Price), FormatEUR(p.Price), pct)
+		msg := fmt.Sprintf("%s → %s (-%s, %s)", FormatEUR(prev.Price), FormatEUR(p.Price),
+			FormatEUR(prev.Price-p.Price), formatPct((p.Price-prev.Price)/prev.Price*100))
 		if p.Price < prev.Lowest {
 			msg += "\nNeuer Tiefstpreis!"
 		} else {
@@ -128,6 +128,14 @@ func FormatEUR(v float64) string {
 	return fmt.Sprintf("%s,%02d €", b.String(), cents%100)
 }
 
+// formatPct shows small changes with one decimal, so a drop never reads "-0 %".
+func formatPct(pct float64) string {
+	if math.Abs(pct) < 1 {
+		return strings.Replace(fmt.Sprintf("%.1f %%", pct), ".", ",", 1)
+	}
+	return fmt.Sprintf("%.0f %%", pct)
+}
+
 func displayName(name, url string) string {
 	if name != "" {
 		return name
@@ -162,6 +170,11 @@ func HTTPFetcher(client *http.Client) Fetcher {
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+		}
+		// A discontinued product may redirect to another one; comparing its
+		// price would fake a drop.
+		if final := resp.Request.URL; final.Path != req.URL.Path {
+			return nil, fmt.Errorf("weitergeleitet auf %s", final.Redacted())
 		}
 		return io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	}
