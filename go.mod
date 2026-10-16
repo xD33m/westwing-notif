@@ -1,4 +1,4 @@
-module westwing-notif
+module github.com/xD33m/westwing-notif
 
 go 1.26.0
 

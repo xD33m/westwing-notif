@@ -1,6 +1,6 @@
 # Westwing price monitor on the Raspberry Pi.
-# Lives in ~/westwing-notif/, put there by deploy.sh.
-# No ports, no Traefik: it only talks outbound to westwing.de and ntfy.sh.
+# Lives in the deploy directory on the host, put there by deploy.sh.
+# No exposed ports: it only talks outbound to westwing.de and the ntfy server.
 
 services:
   westwing-notif:
@@ -8,8 +8,10 @@ services:
     build: .
     image: westwing-notif:local
     restart: unless-stopped
-    user: "1000:1000"                 # host user, so ./data stays editable on the host
+    user: "1000:1000"                 # your host user (see `id`), so ./data stays editable
     read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     env_file: .env                    # NTFY_URL=https://ntfy.sh/<topic>
     environment:
       TZ: Europe/Berlin
